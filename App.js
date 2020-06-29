@@ -136,20 +136,9 @@ class App extends Component {
   render() {
     // foreground state messages
     const notification = messaging().onMessage(async remoteMessage => {
-      if (remoteMessage) {
-
-        let notification = null
-        if (Platform.OS === 'ios') {
-          notification = remoteMessage.data.notification
-        } else {
-          notification = remoteMessage.notification
-        }
-        // onNotification(notification)
-      }
-      console.log("App -> constructor -> remoteMessage", remoteMessage)
-      // messaging().onTokenRefresh().then(fcmToken=>{
-
-      // })
+    console.log("App -> render -> remoteMessage", remoteMessage)
+      let message = JSON.stringify(remoteMessage)
+      Alert.alert(message)
     });
     return (
       <Provider store={store}>
@@ -158,7 +147,7 @@ class App extends Component {
         </NavigationContainer>
       </Provider>
        
-      //  <Camera/>
+      //  <SettingsScreen/>
     )
   }
 }

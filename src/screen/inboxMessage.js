@@ -15,22 +15,25 @@ import {
   FlatList,
   Platform,
   Alert,
-  ActivityIndicator, Animated
+  ActivityIndicator,
+  Animated
 } from 'react-native'
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import Feather from 'react-native-vector-icons/Feather'
 import Entypo from 'react-native-vector-icons/Entypo'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
-// import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import firestore from '@react-native-firebase/firestore';
 import { utils } from '@react-native-firebase/app';
 import storage from '@react-native-firebase/storage';
-// import messaging, { AuthorizationStatus } from '@react-native-firebase/messaging';
-// import database from '@react-native-firebase/database';
+// import * as admin from "firebase-admin";
+
 import moment from 'moment'
 import ImagePicker from 'react-native-image-crop-picker';
 import ActionSheet from 'react-native-actionsheet'
+import RBSheet from "react-native-raw-bottom-sheet";
+import ImageView from "react-native-image-viewing";
+// import Emoticons from 'react-native-emoticons';
 
 console.disableYellowBox = true
 
@@ -43,19 +46,25 @@ export default class inboxMessage extends React.Component {
   flatlist = React.createRef()
   constructor(props) {
     super(props);
+
     this.state = {
       messageText: '',
       typing: false,
       userId: this.props.route.params.userId,
       data: [],
       isLoading: false,
-      avatarSource: ''
+      avatarSource: '',
+     
+     
+      visible: false
+
     }
 
     // Keyboard.addListener('keyboardDidShow', this.keyboardDidShow);
   }
-  showActionSheet = () => {
-    this.ActionSheet.show()
+
+  onEmoticonPress = () => {
+
   }
 
   getPhotoLibrary = async () => {
@@ -105,50 +114,51 @@ export default class inboxMessage extends React.Component {
     })
 
   }
+
   getPhotoCamera = async () => {
     let images = []
     const { item } = this.props.route.params;
     const id = item.id
     const ref = item.ref
-    images = await ImagePicker.openCamera({
+    image = await ImagePicker.openCamera({
       includeBase64: true,
       width: 300,
       height: 400,
       // cropping: true,
     })
-    console.log("inboxMessage -> getPhotoCamera -> images", images)
-      console.log("inboxMessage -> getPhotoLibrary -> item", item)
-      let photoName = new Date().getTime();
-      let str = images.path;
-      let pieces = str.split(".");
-      let typeFile = pieces[pieces.length - 1];
-      let fileName = photoName + '.' + typeFile
-      const reference = storage().ref('/conversation/' + id + '/' + fileName);
-      const pathToFile = str;
-      const task = await reference.putFile(pathToFile);
-      console.log("inboxMessage -> getPhotoLibrary -> reference", reference)
-      // task.on('state_changed', taskSnapshot => {
-      //   console.log(`${taskSnapshot.bytesTransferred} transferred out of ${task.totalBytes}`);
-      // });
-      const url = await storage()
-        .ref('/conversation/' + id + '/' + fileName)
-        .getDownloadURL();
-      console.log("inboxMessage -> getPhotoLibrary -> url", url)
-      await ref
-        .collection('newMessages')
-        .add({
-          message: url,
-          time: firestore.FieldValue.serverTimestamp(),
-          userSend: this.state.userId,
-          unread: true,
-          checkImage: true
-        })
-        .then(() => {
-          this.scrollEnd = setTimeout(() => this.flatlist.current?.scrollToOffset({ animated: true, offset: 0 }), 50)
-        });
-    
-  }
+    console.log("inboxMessage -> getPhotoCamera -> images", image)
+    // Object.keys(image).map
+    console.log("inboxMessage -> getPhotoLibrary -> item", item)
+    let photoName = new Date().getTime();
+    let str = image.path;
+    let pieces = str.split(".");
+    let typeFile = pieces[pieces.length - 1];
+    let fileName = photoName + '.' + typeFile
+    const reference = storage().ref('/conversation/' + id + '/' + fileName);
+    const pathToFile = str;
+    const task = await reference.putFile(pathToFile);
+    console.log("inboxMessage -> getPhotoLibrary -> reference", reference)
+    // task.on('state_changed', taskSnapshot => {
+    //   console.log(`${taskSnapshot.bytesTransferred} transferred out of ${task.totalBytes}`);
+    // });
+    const url = await storage()
+      .ref('/conversation/' + id + '/' + fileName)
+      .getDownloadURL();
+    console.log("inboxMessage -> getPhotoLibrary -> url", url)
+    await ref
+      .collection('newMessages')
+      .add({
+        message: url,
+        time: firestore.FieldValue.serverTimestamp(),
+        userSend: this.state.userId,
+        unread: true,
+        checkImage: true
+      })
+      .then(() => {
+        this.scrollEnd = setTimeout(() => this.flatlist.current?.scrollToOffset({ animated: true, offset: 0 }), 50)
+      });
 
+  }
 
   getMessages = () => {
     const { item } = this.props.route.params;
@@ -163,8 +173,10 @@ export default class inboxMessage extends React.Component {
         onSnapShot.forEach((docMessages) => {
           data.push({ ...docMessages.data(), id: docMessages.id })
         })
-        // console.log("inboxMessage -> getMessages -> data", data)
-        this.setState({ data: data, isLoading: false });
+
+        this.setState({ data, isLoading: false });
+        console.log(`inboxMessage -> getMessages -> data`, data)
+
       });
     } catch (error) {
       this.setState({ isLoading: false })
@@ -197,24 +209,47 @@ export default class inboxMessage extends React.Component {
         unread: true,
         checkImage: false
       })
-      .then(() => {
-        this.textInputChat.clear()
-        this.setState({ typing: false })
-        this.scrollEnd = setTimeout(() => this.flatlist.current?.scrollToOffset({ animated: true, offset: 0 }), 50)
-      });
+      // .then(() => {
+      //   let registrationToken = 'ed62T1-MTtA:APA91bFn0UbheLT4YhnRRlf8ibZReQbs3fRJxsdzef4Zs3FgiKQ0_zjbr_rUTruXziuKN_mBhtS7cfHK08bnu0GzEWhcnI9eI1aO-o3xelpOlDCsjEeFZfv-enYKmYAgSa23ZVDX6SFM';
+      //   let message = {
+      //     data: {
+      //       score: '850',
+      //       time: '2:45'
+      //     },
+      //     token: registrationToken
+      //   };
+
+      //   // Send a message to the device corresponding to the provided
+      //   // registration token.
+      //   messaging().send(message)
+      //     .then((response) => {
+      //       // Response is a message ID string.
+      //       console.log('Successfully sent message:', response);
+           
+      //     })
+      //     .catch((error) => {
+      //       console.log('Error sending message:', error);
+      //     });
+        
+      // });
+      this.textInputChat.clear()
+      this.setState({ typing: false })
+      this.scrollEnd = setTimeout(() => this.flatlist.current?.scrollToOffset({ animated: true, offset: 0 }), 50)
   }
 
   componentDidMount() {
     this.getMessages();
   }
 
-  // componentWillUnmount() {
-  //   this.scrollEnd
-  // }
+  componentWillUnmount() {
+    this.getMessages();
+    this.scrollEnd;
+
+  }
 
   renderItem = ({ item, index }) => {
     // const timestamp = moment(item.timestamp?.toDate()).format('h:mm A');
-
+    let images = [{ uri: item.message }]
     return (
       <View style={{ transform: [{ scaleY: -1 }] }}>
         {/* <View style={styles.timeMessageContainer}>
@@ -234,14 +269,18 @@ export default class inboxMessage extends React.Component {
                     <View style={styles.timeSendContainer}><Text style={styles.timeSend}></Text></View>
                   </View>
                 )}
-                {item.checkImage  && (
-                <View style={styles.messageWrapper}>
-                  <Image style={styles.imageMessageSend} source = {{uri:item.message}}></Image>
-                  {/* <View style={styles.timeSendContainer}>
+                {item.checkImage && (
+                  <View style={styles.messageWrapper}>
+                    <TouchableOpacity style={styles.messageWrapper} onPress={() => this.setState({ visible: true })}>
+                      <Image style={styles.imageMessageSend} source={{ uri: item.message }}></Image>
+
+                      {/* <View style={styles.timeSendContainer}>
                     <Text style={styles.timeSend2}></Text>
                   </View> */}
-                </View>
-              )}
+                    </TouchableOpacity>
+
+                  </View>
+                )}
               </View>
             </View>
             {/* <View style={{marginLeft:60,marginTop:10}}>
@@ -273,12 +312,20 @@ export default class inboxMessage extends React.Component {
                   </View>
                 </View>
               )}
-              {item.checkImage  && (
+              {item.checkImage && (
                 <View style={styles.messageSendWrapper}>
-                  <Image resizeMode='cover' style={styles.imageMessageSend} source = {{uri:item.message}}></Image>
-                  {/* <View style={styles.timeSendContainer}>
+                  <TouchableOpacity style={styles.messageSendWrapper} onPress={() => this.setState({ visible: true })}>
+                    <Image resizeMode='cover' style={styles.imageMessageSend} source={{ uri: item.message }}></Image>
+                    {/* <View style={styles.timeSendContainer}>
                     <Text style={styles.timeSend2}></Text>
                   </View> */}
+                    <ImageView
+                      images={images}
+                      imageIndex={0}
+                      visible={this.state.visible}
+                      onRequestClose={() => this.setState({ visible: false })}        
+                    />
+                  </TouchableOpacity>
                 </View>
               )}
               <View style={styles.avatarContainerSend}>
@@ -319,7 +366,25 @@ export default class inboxMessage extends React.Component {
                 <Text style={styles.textHeader2}>Active 1h ago</Text>
               </View>
               <View style={styles.headerIconContainer}>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => this.RBSheet.open()}>
+                  <RBSheet
+                    ref={ref => {
+                      this.RBSheet = ref;
+                    }}
+                    animationType='slide'
+                    height={300}
+                    openDuration={250}
+                    closeOnDragDown={true}
+                    customStyles={{
+                      container: {
+                        // justifyContent: "center",
+                        alignItems: "center"
+                      },
+                      draggableIcon: { width: widthDevices - 200 }
+                    }}
+                  >
+                    <View><Text>123</Text></View>
+                  </RBSheet>
                   <Feather
                     name='more-vertical'
                     size={30}
@@ -344,9 +409,12 @@ export default class inboxMessage extends React.Component {
                 <FlatList
                   ref={this.flatlist}
                   data={this.state.data}
-                  keyExtractor={(item, index) => item + index.toString()}
+                  keyExtractor={(item, index) => index.toString()}
                   renderItem={this.renderItem}
                   style={{ transform: [{ scaleY: -1 }] }}
+                  // ListFooterComponent={this.renderFooter}
+                  // onEndReachedThreshold={0.4}
+                  // onEndReached={this.handleLoadMore}
                 />
               </View>
             )}
@@ -355,7 +423,7 @@ export default class inboxMessage extends React.Component {
 
             <View style={styles.keyboardContainer}>
               <View style={styles.cameraIconContainer}>
-                <TouchableOpacity onPress={this.showActionSheet}>
+                <TouchableOpacity onPress={() => this.ActionSheet.show()}>
                   <Entypo name='camera' size={24} color='#95a5a6'></Entypo>
                   <ActionSheet
                     ref={o => this.ActionSheet = o}
@@ -381,12 +449,23 @@ export default class inboxMessage extends React.Component {
                   onChangeText={(text) => this.checkMessage(text)}
                   autoCorrect={false}
                   autoCapital={false}
-                  placeholder='Type a message here ....'>
+                  placeholder='Type a message here ....'
+                  keyboardType=''
+                  >
+                   
                 </TextInput>
               </View>
               <View style={styles.IconRightContainer}>
-                <TouchableOpacity>
+                <TouchableOpacity >
                   <MaterialIcons name='insert-emoticon' size={24} color='#95a5a6'></MaterialIcons>
+                  {/* <Emoticons
+                    onEmoticonPress={this.onEmoticonPress}
+                    // onBackspacePress={this.onBackspacePress}
+                    show={this.state.showEmoticons}
+                    concise={true}
+                    showHistoryBar={true}
+                    showPlusBar={true}
+                  /> */}
                 </TouchableOpacity>
               </View>
               <View style={styles.IconRightContainer}>
@@ -500,14 +579,14 @@ const styles = StyleSheet.create({
     padding: 15,
     fontWeight: '500'
   },
-  imageMessageSend:{
+  imageMessageSend: {
     padding: 15,
-    width:100,
-    height:130,
-    borderBottomLeftRadius:10, 
-    borderTopRightRadius:10, 
-    
-    
+    width: 100,
+    height: 130,
+    borderBottomLeftRadius: 10,
+    borderTopRightRadius: 10,
+
+
   },
   timeSendContainer: {
     height: 5, marginBottom: 5, justifyContent: 'center', alignItems: 'flex-end'

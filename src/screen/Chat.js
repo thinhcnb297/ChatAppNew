@@ -30,6 +30,9 @@ export default class ChatScreen extends React.Component {
   componentDidMount() {
     this.getData();
   }
+  UNSAFE_componentWillMount(){
+    this.getData();
+  }
 
   async getUserId() {
     const UserInfoString = await AsyncStorage.getItem('UserInfo');
@@ -90,15 +93,18 @@ export default class ChatScreen extends React.Component {
               // Lấy data người nhận message 
               const avatarUserSend = '';
               const fullNameUserSend = '';
+              const userSend = '';
 
               for (let i = 0; i < 2; i++) {
-                if (doc.data().users[i] != this.state.userId) {
-                  
-                  await firestore().collection('users').doc(doc.data().users[i]).get().then(docUserAvatar => {
-                    
+                if (doc.data().users[i] != this.state.userId) {        
+                  await firestore()
+                  .collection('users')
+                  .doc(doc.data().users[i])
+                  .get()
+                  .then(docUserAvatar => {         
                     avatarUserSend = docUserAvatar.data().avatar
-                    fullNameUserSend = docUserAvatar.data().fullname
-                  
+                    fullNameUserSend = docUserAvatar.data().fullname             
+                    userSend = doc.data().users[i]             
                   })
                 }
               }
@@ -121,6 +127,7 @@ export default class ChatScreen extends React.Component {
                 ref: doc.ref,
                 avatarUserSend,
                 fullNameUserSend,
+                userSend,
                 lastMessage,
                 timeLastMessage,
                 checkImageLast
@@ -128,7 +135,7 @@ export default class ChatScreen extends React.Component {
 
               // }
             }
-            // console.log("ChatScreen -> getData -> response", data)
+            console.log("ChatScreen -> getData -> response", data)
             this.setState({
               data: data,
               arrayholder: data,
@@ -153,7 +160,7 @@ export default class ChatScreen extends React.Component {
   };
 
   renderItem = ({ index, item }) => {
-
+    
     if (!item.lastMessage || !item.timeLastMessage) return null;
 
     return (
@@ -173,10 +180,13 @@ export default class ChatScreen extends React.Component {
             </View>
             <View style={styles.inforContainer}>
               <Text style={{fontSize: 15,fontWeight: '900',color: 'black',}}>{item.fullNameUserSend}</Text>
-              {item.checkImageLast && this.state.userId === item.userSend &&(
+              {item.checkImageLast && this.state.userId !== item.userSend &&(
+               
                 <Text style={{fontSize: 12,fontWeight: '600',color: '#95a5a6',}}>Bạn đã gửi một hình ảnh</Text>
               )}
-              {item.checkImageLast && this.state.userId !== item.userSend &&(
+              
+              
+              {item.checkImageLast && this.state.userId === item.userSend &&(
                 <Text style={{fontSize: 12,fontWeight: '600',color: '#95a5a6',}}>Bạn đã nhận một hình ảnh</Text>
               )}
               {item.checkImageLast == false &&(
