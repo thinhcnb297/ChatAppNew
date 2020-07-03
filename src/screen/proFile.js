@@ -37,7 +37,7 @@ export default class proFile extends Component {
   }
   signOutHandle = async () => {
     const respone = await AsyncStorage.removeItem('UserInfo')
-    await auth().signOut().then(() => this.props.navigation.navigate('FlashScreen'));
+    auth().signOut().then(() => this.props.navigation.navigate('FlashScreen'));
   }
   render() {
     return (
